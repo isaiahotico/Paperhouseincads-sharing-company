@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PAPERHOUSE SHARING CORPORATION</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+    <!-- ADTERRA & MONETAG SCRIPTS -->
+    <script src='//libtl.com/sdk.js' data-zone='10555663' data-sdk='show_10555663'></script>
+    <script src='//libtl.com/sdk.js' data-zone='10830602' data-sdk='show_10830602'></script>
+    <!-- Replace 'YOUR_MONETAG_ID' with your actual Monetag Zone ID -->
+    <script src="https://alwingulla.com/88/tag.min.js" data-zone="YOUR_MONETAG_ID" async data-p="YOUR_MONETAG_ID"></script>
+
+    <style>
+        .hidden { display: none; }
+        .sidebar { transition: 0.3s; transform: translateX(-100%); }
+        .sidebar.open { transform: translateX(0); }
+        #ad-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col transition-colors duration-500">
+
+    <!-- Sidebar Menu -->
+    <div id="sidebar" class="sidebar fixed top-0 left-0 h-full w-64 bg-gray-800 z-50 p-5 border-r border-blue-500">
+        <button onclick="toggleMenu()" class="text-red-500 font-bold mb-8">✕ CLOSE MENU</button>
+        <nav class="flex flex-col space-y-4">
+            <button onclick="showSection('home')" class="text-left p-2 hover:bg-gray-700 rounded">🏠 Home</button>
+            <button onclick="showSection('withdraw')" class="text-left p-2 hover:bg-gray-700 rounded">💰 Withdrawal</button>
+            <button onclick="showSection('referral')" class="text-left p-2 hover:bg-gray-700 rounded">👥 Referrals</button>
+            <button onclick="showSection('family')" class="text-left p-2 hover:bg-gray-700 rounded">👨‍👩‍👧 Family Tasks</button>
+            <button onclick="showSection('admin')" class="text-left p-2 hover:bg-gray-700 rounded text-yellow-500 font-bold">🛠 Admin Panel</button>
+            <button onclick="showSection('settings')" class="text-left p-2 hover:bg-gray-700 rounded">🎨 Colors</button>
+        </nav>
+    </div>
+
+    <!-- Header -->    <header class="bg-blue-900 p-4 shadow-xl flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <button onclick="toggleMenu()" class="text-2xl">☰</button>
+            <h1 class="text-sm font-bold tracking-tighter">PAPERHOUSE SHARING</h1>
+        </div>
+        <div id="tg-username" class="text-green-400 font-mono text-xs">@Guest</div>
+    </header>
+
+    <main class="flex-grow p-4 container mx-auto max-w-md">
+        <!-- Global Stats -->
+        <div class="grid grid-cols-2 gap-2 mb-4 text-[10px] uppercase font-bold">
+            <div class="bg-gray-800 p-2 rounded border border-gray-700">Online: <span id="stat-online" class="text-blue-400">0</span></div>
+            <div class="bg-gray-800 p-2 rounded border border-gray-700">Total Users: <span id="stat-reg" class="text-blue-400">0</span></div>
+            <div class="bg-gray-800 p-2 rounded border border-gray-700">Total System Income: $<span id="stat-income" class="text-green-400">0.00</span></div>
+            <div class="bg-gray-800 p-2 rounded border border-gray-700">Your Balance: $<span id="user-balance" class="text-yellow-400">0.00000</span></div>
+        </div>
+
+        <!-- SECTIONS -->
+        <div id="sec-home" class="section">
+            <div class="space-y-4">
+                <button onclick="triggerAdTask('PREMIUM ADS 1')" class="w-full bg-gradient-to-r from-blue-600 to-indigo-700 p-6 rounded-2xl font-bold shadow-lg">PREMIUM ADS 1</button>
+                <button onclick="triggerAdTask('TURBO ADS 2')" class="w-full bg-gradient-to-r from-red-600 to-orange-700 p-6 rounded-2xl font-bold shadow-lg">TURBO ADS 2</button>
+            </div>
+            <div id="quote-display" class="mt-8 p-4 bg-gray-800 rounded-lg italic text-center text-sm text-gray-400"></div>
+        </div>
+
+        <div id="sec-withdraw" class="section hidden">
+            <h2 class="text-xl font-bold mb-4">Withdraw (Min $0.02)</h2>
+            <div class="space-y-2">
+                <input id="wd-email" type="email" placeholder="Email" class="w-full p-2 bg-gray-800 rounded">
+                <input id="wd-name" type="text" placeholder="Account Name" class="w-full p-2 bg-gray-800 rounded">                <input id="wd-gcash" type="text" placeholder="GCash/Faucet/PayPal Number" class="w-full p-2 bg-gray-800 rounded">
+                <select id="wd-method" class="w-full p-2 bg-gray-800 rounded text-black">
+                    <option value="GCash">GCash</option>
+                    <option value="FaucetPay">FaucetPay</option>
+                    <option value="PayPal">PayPal</option>
+                </select>
+                <button onclick="requestWithdrawal()" class="w-full bg-green-600 py-3 rounded-xl font-bold">Request Cashout</button>
+            </div>
+            <h3 class="mt-6 font-bold border-b pb-2">History</h3>
+            <div id="wd-history" class="text-xs mt-2 space-y-1"></div>
+        </div>
+
+        <div id="sec-referral" class="section hidden">
+            <h2 class="text-xl font-bold mb-2">Referral Program (12%)</h2>
+            <div class="bg-gray-800 p-4 rounded-lg mb-4">
+                <p class="text-xs text-gray-400">Your Code:</p>
+                <p id="my-ref-code" class="text-2xl font-mono font-bold text-blue-400">------</p>
+            </div>
+            <div id="ref-register-box" class="bg-blue-900/30 p-4 rounded-lg border border-blue-500 mb-4">
+                <input id="ref-input" type="text" placeholder="Enter 6-char referral code" class="w-full p-2 bg-gray-800 rounded mb-2 uppercase">
+                <button onclick="applyReferral()" class="w-full bg-blue-600 py-2 rounded text-sm">Register & Claim Bonus</button>
+            </div>
+            <div class="grid grid-cols-2 gap-4 text-center">
+                <div class="bg-gray-800 p-3 rounded">
+                    <p class="text-[10px]">Total Referrals</p>
+                    <p id="count-ref" class="text-xl font-bold">0</p>
+                </div>
+                <div class="bg-gray-800 p-3 rounded">
+                    <p class="text-[10px]">Total Earned</p>
+                    <p id="earned-ref" class="text-xl font-bold">$0.00</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="sec-family" class="section hidden">
+            <h2 class="text-xl font-bold mb-4">Family Tasks</h2>
+            <div class="bg-gray-800 p-4 rounded mb-4">
+                <input id="task-link" type="text" placeholder="Paste Telegram Link" class="w-full p-2 bg-gray-700 rounded mb-2">
+                <button onclick="postFamilyTask()" class="w-full bg-purple-600 py-2 rounded text-xs">Post Link ($0.02 or 20 Ads)</button>
+            </div>
+            <div id="task-list" class="space-y-2"></div>
+        </div>
+
+        <div id="sec-admin" class="section hidden">
+            <div id="admin-auth">
+                <h2 class="text-xl font-bold mb-4">Admin Login</h2>
+                <input id="admin-pass" type="password" placeholder="Password" class="w-full p-2 bg-gray-800 rounded mb-2">
+                <button onclick="loginAdmin()" class="w-full bg-yellow-600 py-2 rounded">Enter</button>
+            </div>
+            <div id="admin-panel" class="hidden">
+                <h2 class="text-xl font-bold mb-4 text-yellow-500">Withdrawal Management</h2>
+                <div id="admin-requests" class="space-y-4"></div>
+            </div>
+        </div>
+
+        <div id="sec-settings" class="section hidden">
+            <h2 class="text-xl font-bold mb-4">Pick Theme Color</h2>
+            <div class="flex gap-4 flex-wrap">
+                <button onclick="setTheme('#111827')" class="w-12 h-12 rounded-full bg-gray-900 border"></button>
+                <button onclick="setTheme('#1e3a8a')" class="w-12 h-12 rounded-full bg-blue-900 border"></button>
+                <button onclick="setTheme('#312e81')" class="w-12 h-12 rounded-full bg-indigo-900 border"></button>
+                <button onclick="setTheme('#4c1d95')" class="w-12 h-12 rounded-full bg-purple-900 border"></button>
+                <button onclick="setTheme('#064e3b')" class="w-12 h-12 rounded-full bg-green-900 border"></button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 p-4 text-center border-t border-gray-700">
+        <p class="text-[10px] text-gray-500 tracking-widest">PAPERHOUSE SHARING CORPORATION</p>
+        <p id="footer-time" class="text-xs font-mono text-gray-400 mt-1"></p>
+    </footer>
+
+    <!-- Ad Overlay -->
+    <div id="ad-overlay" class="hidden">
+        <h3 id="ad-title" class="text-xl font-bold mb-4">PREMIUM AD</h3>
+        <div class="relative w-32 h-32 flex items-center justify-center">
+            <svg class="absolute inset-0 w-full h-full"><circle cx="64" cy="64" r="60" stroke="currentColor" stroke-width="8" fill="transparent" class="text-gray-700"/><circle id="timer-circle" cx="64" cy="64" r="60" stroke="currentColor" stroke-width="8" fill="transparent" stroke-dasharray="377" stroke-dashoffset="0" class="text-blue-500 transition-all duration-1000"/></svg>
+            <span id="timer-text" class="text-4xl font-bold">20</span>
+        </div>
+        <p class="mt-4 text-sm text-gray-400">Do not close the browser!</p>
+        <div id="claim-box" class="hidden mt-8 text-center">
+            <button onclick="claimAdReward()" class="bg-green-600 px-10 py-4 rounded-full font-bold text-xl animate-bounce">CLAIM $0.00014</button>
+        </div>
+    </div>
+
+    <audio id="beep-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
+
+    <script src="app.js"></script>
+</body>
+</html>
